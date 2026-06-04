@@ -126,7 +126,43 @@ $$B_{SSB} = f_m$$
 
 For this project $f_m = 1\ \text{kHz}$, which gives a DSB bandwidth of 2 kHz and an SSB bandwidth of 1 kHz.
 
-## 1.3 SIMetrix Simulation
+## 1.3 DSP Model Verification (MATLAB)
+
+Before committing the design to SIMetrix and hardware, the SSB phase-shift method of §1.2 was verified numerically in MATLAB. This establishes an ideal baseline — the performance the method achieves with perfect components — against which the circuit results are later measured. The model implements the same chain as the hardware: a 1 kHz message and its 90° Hilbert-shifted copy, upper-sideband modulation onto a 700 kHz carrier via the I–Q phasing structure (I − Q), coherent demodulation, and an RC low-pass recovery filter.
+
+### 1.3.1 Modulation and Hilbert Transform
+
+![DSP message, Hilbert transform, and USB signal](../images/am_usb/am_ssb_waveforms.png)
+
+*Figure 4: MATLAB DSP model — 1 kHz message, its 90° Hilbert-shifted copy, and the resulting AM-USB signal.*
+
+The I–Q phasing structure collapses algebraically to $\cos(2\pi (f_c + f_m) t)$ — a single tone at 701 kHz, the upper sideband only, with the lower sideband cancelled.
+
+### 1.3.2 Transmit Spectrum
+
+![DSP transmit spectrum showing USB at 701 kHz](../images/am_usb/am_ssb_spectrum.png)
+
+*Figure 5: MATLAB DSP model — transmit spectrum showing the USB at 701 kHz with the LSB and carrier suppressed.*
+
+Sideband suppression in the ideal model is **≈ 263 dB** — effectively perfect, limited only by floating-point precision. This confirms the phase-shift method imposes no theoretical limit on sideband rejection; the ~52 dB measured on the circuit (§1.6) is therefore set by component tolerances, not by the method.
+
+### 1.3.3 Coherent Recovery
+
+![Original vs recovered message at phi = 0](../images/am_usb/am_ssb_recovery.png)
+
+*Figure 6: MATLAB DSP model — original 1 kHz message and the coherently recovered output at φ = 0°.*
+
+Multiplying the USB signal by a phase-locked local oscillator and low-pass filtering recovers the original 1 kHz message cleanly, validating the demodulator design.
+
+### 1.3.4 Phase-Angle Experiment
+
+![Recovered output at LO phases of 0, 90, and 180 degrees](../images/am_usb/am_ssb_phase.png)
+
+*Figure 7: MATLAB DSP model — recovered output at LO phases of 0°, 90° and 180°.*
+
+A defining property of SSB is that the recovered **amplitude is preserved at every LO phase** — only the output phase rotates. The model confirms this: the recovered peak holds constant across 0°, 90°, and 180°, distinguishing SSB from DSB (where a 90° offset nulls the output). This validates the phase behaviour examined on the circuit in §1.7.
+
+## 1.4 SIMetrix Simulation
 
 The USB circuit was simulated in SIMetrix to check if the design would work with realistic component-level behaviour before committing to a breadboard. The modulator uses first-order RC networks for 90° phase shifting, two double-balanced mixers (centre-tapped transformers with BAS70-04 Schottky diodes), an LM6172 difference amplifier for sideband cancellation, and a VCVS for output gain. The demodulator uses the same mixer topology as a product detector, followed by a two-stage RC low-pass filter and a gain stage.
 
@@ -142,7 +178,7 @@ This method mathematically cancels one sideband, producing a single-sideband AM 
 
 *Figure 25: SIMetrix full schematic diagram.*
 
-### 1.3.1 RC Phase-Shift Networks
+### 1.4.1 RC Phase-Shift Networks
 
 Each source signal is split into in-phase (I) and quadrature (Q) paths using first-order RC networks. At the design frequency, the low-pass RC configuration produces a −45° phase shift and the high-pass RC configuration produces +45°, giving a total 90° difference between I and Q. This quadrature relationship is what enables the difference amplifier to cancel one sideband in the next stage.
 
@@ -160,7 +196,7 @@ $$\frac{1}{2\pi \times 10000 \times 15.915 \times 10^{-9}} = 1000.0\ \text{Hz}$$
 
 In each splitter, the I path takes the output across the capacitor (low-pass, −45°) and the Q path takes the output across the resistor (high-pass, +45°). The 45° phase shift is only exact at the design frequency, so this approach is valid for a single-tone message but would require a wideband Hilbert filter for broadband signals.
 
-### 1.3.2 Double-Balanced Mixers
+### 1.4.2 Double-Balanced Mixers
 
 Two identical double-balanced mixers (DBMs) perform the signal multiplication. Each mixer consists of two centre-tapped ideal transformers and four BAS70-04 Schottky diodes arranged in a ring configuration.
 
@@ -182,7 +218,7 @@ Mixer 1 receives the I path outputs (carrier I and message I), and Mixer 2 recei
 
 *Figure 27: Q path DBM mixer.*
 
-### 1.3.3 Difference Amplifier
+### 1.4.3 Difference Amplifier
 
 The outputs of both mixers go into a difference amplifier that performs the subtraction required for sideband cancellation. The LM6172 op-amp is configured as a standard four-resistor difference amplifier with all four resistors matched at 100 kΩ, powered from a ±15 V dual supply.
 
@@ -192,17 +228,17 @@ A 10 nF coupling capacitor in series with each mixer IF output blocks the DC off
 
 The difference amplifier computes: `Output = Mixer 2 (Q path) − Mixer 1 (I path)`. Using the phase-shift method, this subtraction cancels the lower sideband components (699 kHz) which are in-phase between the two paths, while reinforcing the upper sideband components (701 kHz) which is 180° out of phase. The result is a USB signal with the carrier and lower sideband suppressed.
 
-### 1.3.4 VCVS Gain Stage
+### 1.4.4 VCVS Gain Stage
 
 The difference amplifier output is at millivolt level due to losses through the diode rings, transformers, and RC networks. To restore the amplitude of the signal, an ideal voltage-controlled voltage source (VCVS) with a gain of 6.25 amplifies the signal.
 
-A VCVS was chosen instead of a second op-amp stage because the required gain of 6.25 exceeds the TL072's achievable gain at 700 kHz (~4.3×, see 1.3.3). The VCVS has no bandwidth limitation and provides ideal linear amplification. In a real hardware implementation, this stage would be replaced by a wideband RF amplifier or several cascaded gain stages.
+A VCVS was chosen instead of a second op-amp stage because the required gain of 6.25 exceeds the TL072's achievable gain at 700 kHz (~4.3×, see 1.4.3). The VCVS has no bandwidth limitation and provides ideal linear amplification. In a real hardware implementation, this stage would be replaced by a wideband RF amplifier or several cascaded gain stages.
 
 A 10 nF coupling capacitor between the difference amplifier output and the VCVS positive input, with a 100 kΩ resistor to ground, blocks the residual ~4 mV DC offset that would otherwise be amplified to drive the output off-centre. The time constant (10 nF × 100 kΩ = 1 ms) allows the circuit to settle quickly.
 
 The VCVS output is a 1.07 V peak signal centred at 0 V, with the 701 kHz upper sideband as the dominant spectral component.
 
-### 1.3.5 Node Limit and Schematic Separation
+### 1.4.5 Node Limit and Schematic Separation
 
 SIMetrix Intro 7.20 imposes a hard limit on the number of analogue nodes in a single schematic. The modulator circuit alone — which has four RC networks, two double-balanced mixers with centre-tapped transformers, the LM6172 difference amplifier, and the VCVS gain stage — uses nearly all available nodes. Adding the demodulator exceeded this limit, producing a "Too many analog nodes" error.
 
@@ -220,7 +256,7 @@ To work around this, the circuit was split into two schematics. The modulator VC
 
 *Figure 30: PWL AC source file.*
 
-### 1.3.6 Coherent Demodulator
+### 1.4.6 Coherent Demodulator
 
 The demodulator uses the same centre-tapped transformer DBM topology as the modulator mixers. The USB signal (imported from the PWL file) drives the RF transformer primary, while a locally generated 700 kHz, 10 V, 0° sine wave drives the LO transformer primary. Both sources feed their primaries through a 1 Ω series resistor to prevent the "Singular matrix" error caused by connecting a voltage source directly to a transformer primary (which forms an inductor–voltage source loop in SPICE).
 
@@ -230,7 +266,7 @@ The demodulator multiplies the received USB signal by the local carrier, which p
 
 *Figure 31: Demodulator Stage (Separate Schematic).*
 
-### 1.3.7 Low-Pass Filter
+### 1.4.7 Low-Pass Filter
 
 The demodulator output is passed through two cascaded first-order RC filter stages, each with R = 470 Ω and C = 80 nF. The cutoff frequency of each stage is:
 
@@ -242,7 +278,7 @@ This passes the recovered 1 kHz message while rejecting the sum-frequency mixing
 
 *Figure 32: Low Pass Filter Stage.*
 
-## 1.4 Waveform Analysis and Results
+## 1.5 Waveform Analysis and Results
 
 ![Mixer 1 (I path) IF output, time domain](../images/am_usb/fig33_mixer1_if_time_domain.png)
 
@@ -352,19 +388,19 @@ The FFT shows a dominant peak at 1 kHz with an amplitude of approximately 200 mV
 
 The overlay confirms that the demodulated signal matches the original message in both frequency (1 kHz) and amplitude (~1 V peak), verifying successful USB modulation and coherent demodulation. A phase offset of approximately 90° is visible between the two waveforms. This delay is introduced by the analogue components in the signal chain, primarily the two cascaded RC low-pass filter stages which each contribute approximately 13° of phase lag at 1 kHz, combined with additional phase shifts from the AC coupling capacitors and the modulator's RC phase-shift networks. This phase offset does not represent signal degradation because it is a fixed, frequency-dependent delay inherent to analogue filtering, and would be compensated in a practical receiver using phase-locked synchronisation. The frequency and amplitude match the original message through the full signal chain.
 
-## 1.5 SIMetrix Simulation Analysis
+## 1.6 SIMetrix Simulation Analysis
 
 The SIMetrix results confirm the phase-shift architecture, achieving a 52 dB sideband suppression ratio. The LSB is suppressed to 1 mV and the carrier is eliminated by the DBM's symmetric diode bridge, leaving only the upper sideband and halving the transmitted bandwidth to 2 kHz — the spectral efficiency advantage of SSB. Demodulation successfully recovers the 1 kHz message at full amplitude with a predictable 90° phase shift caused by cumulative analogue filtering. While the first-order RC networks provide excellent performance for this single-tone test, their frequency-dependent response remains a primary limitation for wideband applications. This simulation confirms the design is ready for practical implementation.
 
-## 1.6 Phase Angle Experiment
+## 1.7 Phase Angle Experiment
 
-### 1.6.1 Test Method
+### 1.7.1 Test Method
 
 The analysis focuses on the demodulator's response to phase angle variation between the transmitted carrier and the receiver's local oscillator (LO). For SSB-AM, theory predicts that the recovered signal amplitude is preserved across all LO phase angles, with only the phase of the output changing — distinct from DSB-SC, where the recovered amplitude scales with $\cos(\varphi)$ and falls to zero at $\varphi = 90°$.
 
 The test was performed on the SIMetrix demodulator schematic by varying the LO sine source's phase parameter while leaving the incoming USB signal (PWL-imported from the modulator output) unchanged. This setup reflects a real-world receiver, where the LO is the only parameter under receiver control. Three phase angles were tested as required for comprehensive analysis: $\varphi = 0°,\ 90°,\ 180°$.
 
-### 1.6.2 Results
+### 1.7.2 Results
 
 ![Demodulator output for phi = 0, 90, 180 degrees](../images/am_usb/fig52_phase_angle_experiment.png)
 
@@ -380,7 +416,7 @@ Cursor measurements gave maximum amplitudes of 1.007 V, 1.060 V and 1.020 V.
 | 90°          | 1.0602374          | ½ m̂(t) (Hilbert transform)         | 90° shifted                   |
 | 180°         | 1.0201006          | −½ m(t)                             | Inverted                      |
 
-### 1.6.3 Analysis
+### 1.7.3 Analysis
 
 The recovered amplitude remains within ~5% across all three phase points (1.007, 1.060, 1.020 V), confirming the SSB-AM prediction that coherent demodulation preserves amplitude regardless of LO phase. This is the defining behaviour distinguishing SSB-AM from DSB-SC, where amplitude would follow $\cos(\varphi)$ and drop to zero at 90°.
 
