@@ -404,7 +404,7 @@ The test was performed on the SIMetrix demodulator schematic by varying the LO s
 
 ![Demodulator output for phi = 0, 90, 180 degrees](../images/am_usb/fig52_phase_angle_experiment.png)
 
-*Figure: Demodulator output for φ = 0° (red, bottom), 90° (green, middle) and 180° (blue, top).*
+*Figure 52: Demodulator output for φ = 0° (red, bottom), 90° (green, middle) and 180° (blue, top).*
 
 Cursor measurements gave maximum amplitudes of 1.007 V, 1.060 V and 1.020 V.
 
