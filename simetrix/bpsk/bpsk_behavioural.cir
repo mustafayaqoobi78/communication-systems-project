@@ -1,0 +1,23 @@
+* BPSK Modulator / Demodulator — Behavioural Model
+* Mustafa Yaqoobi — TC60056E Communications Systems
+
+* === Sources ===
+V1 carrier 0 SINE(0 1 700k 0)
+V2 message 0 PULSE(-1 1 0 1n 1n 0.5m 1m)
+
+* === BPSK Modulator: s(t) = sgn(m(t)) · cos(2·pi·fc·t) ===
+B1 bpsk_out 0 V=V(carrier)*sgn(V(message))
+
+* === Coherent Demodulator: multiply by synchronous carrier ===
+B2 mixer_out 0 V=V(bpsk_out)*V(carrier)
+
+* === Two-stage RC LPF: fc = 1/(2·pi·470·80n) ≈ 4.23 kHz ===
+R1 mixer_out lpf1 470
+C1 lpf1 0 80n
+R2 lpf1 recovered 470
+C2 recovered 0 80n
+
+* === Simulation ===
+.tran 0 10m 0 100n
+
+.end

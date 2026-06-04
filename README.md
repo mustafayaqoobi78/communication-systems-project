@@ -57,9 +57,12 @@ communication-systems-project/
 ├── matlab/
 │   ├── am_ssb_phase_shift.m   # DSP model: SSB phase-shift modulation, demod, phase experiment
 │   └── bpsk_tdm.m             # DSP model: BPSK + TDM modulation, demod, demux, phase experiment
-└── images/
-    ├── am_usb/            # spectra, schematics, waveforms, FFTs (DSP + SIMetrix)
-    └── bpsk/              # 29 figures: SIMetrix waveforms + breadboard photos and scope captures
+├── images/
+│   ├── am_usb/             # spectra, schematics, waveforms, FFTs (DSP + SIMetrix)
+│   └── bpsk/               # 29 figures: SIMetrix waveforms + breadboard photos and scope captures
+├── simetrix/
+│   ├── am_usb/             # AM-USSB SIMetrix schematic (.sxsch) and SPICE netlist (.cir)
+│   └── bpsk/               # BPSK behavioural SPICE netlist (.cir)
 ```
 
 ## License

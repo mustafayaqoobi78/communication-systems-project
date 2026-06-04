@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="utf-8"?>
+<schematic version="2">
+  <instances>
+
+    <!-- V1: Message signal m(t) = 1kHz cosine -->
+    <instance name="V1" x="160" y="320" rotation="0">
+      <component library="SIMetrix Elements" name="VSINE"/>
+      <params>
+        <param name="FREQ" value="1000"/>
+        <param name="AMPL" value="1"/>
+        <param name="PHASE" value="0"/>
+        <param name="DC" value="0"/>
+        <param name="label" value="V1 m(t) 1kHz"/>
+      </params>
+    </instance>
+
+    <!-- V2: Hilbert transform mhat(t) = 1kHz sine -90deg -->
+    <instance name="V2" x="160" y="560" rotation="0">
+      <component library="SIMetrix Elements" name="VSINE"/>
+      <params>
+        <param name="FREQ" value="1000"/>
+        <param name="AMPL" value="1"/>
+        <param name="PHASE" value="-90"/>
+        <param name="DC" value="0"/>
+        <param name="label" value="V2 Hilbert -90deg"/>
+      </params>
+    </instance>
+
+    <!-- V3: In-phase carrier cos(2pi*10kHz*t) -->
+    <instance name="V3" x="160" y="800" rotation="0">
+      <component library="SIMetrix Elements" name="VSINE"/>
+      <params>
+        <param name="FREQ" value="10000"/>
+        <param name="AMPL" value="1"/>
+        <param name="PHASE" value="0"/>
+        <param name="DC" value="0"/>
+        <param name="label" value="V3 Carrier cos 10kHz"/>
+      </params>
+    </instance>
+
+    <!-- V4: Quadrature carrier sin(2pi*10kHz*t) -->
+    <instance name="V4" x="160" y="1040" rotation="0">
+      <component library="SIMetrix Elements" name="VSINE"/>
+      <params>
+        <param name="FREQ" value="10000"/>
+        <param name="AMPL" value="1"/>
+        <param name="PHASE" value="-90"/>
+        <param name="DC" value="0"/>
+        <param name="label" value="V4 Carrier sin 10kHz"/>
+      </params>
+    </instance>
+
+    <!-- V5: Demodulator local oscillator -->
+    <instance name="V5" x="160" y="1280" rotation="0">
+      <component library="SIMetrix Elements" name="VSINE"/>
+      <params>
+        <param name="FREQ" value="10000"/>
+        <param name="AMPL" value="1"/>
+        <param name="PHASE" value="0"/>
+        <param name="DC" value="0"/>
+        <param name="label" value="V5 Local OSC phi=0"/>
+      </params>
+    </instance>
+
+    <!-- BV1: In-phase multiplier m(t) x cos(wct) -->
+    <instance name="BV1" x="480" y="320" rotation="0">
+      <component library="SIMetrix Elements" name="ABM2"/>
+      <params>
+        <param name="VALUE" value="V(%IN+)*V(%IN-)"/>
+        <param name="label" value="BV1 m x cos"/>
+      </params>
+    </instance>
+
+    <!-- BV2: Quadrature multiplier mhat(t) x sin(wct) -->
+    <instance name="BV2" x="480" y="560" rotation="0">
+      <component library="SIMetrix Elements" name="ABM2"/>
+      <params>
+        <param name="VALUE" value="V(%IN+)*V(%IN-)"/>
+        <param name="label" value="BV2 mhat x sin"/>
+      </params>
+    </instance>
+
+    <!-- BV3: Subtractor inphase - quad = SSB -->
+    <instance name="BV3" x="800" y="440" rotation="0">
+      <component library="SIMetrix Elements" name="ABM2"/>
+      <params>
+        <param name="VALUE" value="V(%IN+)-V(%IN-)"/>
+        <param name="label" value="BV3 SSB-USB"/>
+      </params>
+    </instance>
+
+    <!-- BV4: Demodulator multiplier SSB x cos(wct+phi) -->
+    <instance name="BV4" x="1120" y="440" rotation="0">
+      <component library="SIMetrix Elements" name="ABM2"/>
+      <params>
+        <param name="VALUE" value="V(%IN+)*V(%IN-)"/>
+        <param name="label" value="BV4 Demod"/>
+      </params>
+    </instance>
+
+    <!-- R1: LPF stage 1 resistor -->
+    <instance name="R1" x="1440" y="440" rotation="90">
+      <component library="SIMetrix Elements" name="RES"/>
+      <params>
+        <param name="VALUE" value="1k"/>
+        <param name="label" value="R1 1k"/>
+      </params>
+    </instance>
+
+    <!-- C1: LPF stage 1 capacitor -->
+    <instance name="C1" x="1600" y="560" rotation="0">
+      <component library="SIMetrix Elements" name="CAP"/>
+      <params>
+        <param name="VALUE" value="80n"/>
+        <param name="label" value="C1 80n"/>
+      </params>
+    </instance>
+
+    <!-- R2: LPF stage 2 resistor -->
+    <instance name="R2" x="1760" y="440" rotation="90">
+      <component library="SIMetrix Elements" name="RES"/>
+      <params>
+        <param name="VALUE" value="1k"/>
+        <param name="label" value="R2 1k"/>
+      </params>
+    </instance>
+
+    <!-- C2: LPF stage 2 capacitor -->
+    <instance name="C2" x="1920" y="560" rotation="0">
+      <component library="SIMetrix Elements" name="CAP"/>
+      <params>
+        <param name="VALUE" value="80n"/>
+        <param name="label" value="C2 80n"/>
+      </params>
+    </instance>
+
+    <!-- Ground symbols -->
+    <instance name="GND1" x="160" y="400" rotation="0">
+      <component library="SIMetrix Elements" name="0"/>
+    </instance>
+    <instance name="GND2" x="160" y="640" rotation="0">
+      <component library="SIMetrix Elements" name="0"/>
+    </instance>
+    <instance name="GND3" x="160" y="880" rotation="0">
+      <component library="SIMetrix Elements" name="0"/>
+    </instance>
+    <instance name="GND4" x="160" y="1120" rotation="0">
+      <component library="SIMetrix Elements" name="0"/>
+    </instance>
+    <instance name="GND5" x="160" y="1360" rotation="0">
+      <component library="SIMetrix Elements" name="0"/>
+    </instance>
+    <instance name="GND6" x="1600" y="720" rotation="0">
+      <component library="SIMetrix Elements" name="0"/>
+    </instance>
+    <instance name="GND7" x="1920" y="720" rotation="0">
+      <component library="SIMetrix Elements" name="0"/>
+    </instance>
+
+  </instances>
+
+  <nets>
+    <!-- msg net: V1 + to BV1 IN+ -->
+    <net name="msg">
+      <pin instance="V1" pin="P"/>
+      <pin instance="BV1" pin="IN+"/>
+    </net>
+
+    <!-- car_cos net: V3 + to BV1 IN- -->
+    <net name="car_cos">
+      <pin instance="V3" pin="P"/>
+      <pin instance="BV1" pin="IN-"/>
+    </net>
+
+    <!-- hilbert net: V2 + to BV2 IN+ -->
+    <net name="hilbert">
+      <pin instance="V2" pin="P"/>
+      <pin instance="BV2" pin="IN+"/>
+    </net>
+
+    <!-- car_sin net: V4 + to BV2 IN- -->
+    <net name="car_sin">
+      <pin instance="V4" pin="P"/>
+      <pin instance="BV2" pin="IN-"/>
+    </net>
+
+    <!-- inphase net: BV1 out to BV3 IN+ -->
+    <net name="inphase">
+      <pin instance="BV1" pin="OUT"/>
+      <pin instance="BV3" pin="IN+"/>
+    </net>
+
+    <!-- quad net: BV2 out to BV3 IN- -->
+    <net name="quad">
+      <pin instance="BV2" pin="OUT"/>
+      <pin instance="BV3" pin="IN-"/>
+    </net>
+
+    <!-- ssb net: BV3 out to BV4 IN+ -->
+    <net name="ssb">
+      <pin instance="BV3" pin="OUT"/>
+      <pin instance="BV4" pin="IN+"/>
+    </net>
+
+    <!-- demod_car net: V5 + to BV4 IN- -->
+    <net name="demod_car">
+      <pin instance="V5" pin="P"/>
+      <pin instance="BV4" pin="IN-"/>
+    </net>
+
+    <!-- BV4 out to R1 -->
+    <net name="demod_raw">
+      <pin instance="BV4" pin="OUT"/>
+      <pin instance="R1" pin="P"/>
+    </net>
+
+    <!-- R1 to C1 and R2 -->
+    <net name="mid1">
+      <pin instance="R1" pin="N"/>
+      <pin instance="C1" pin="P"/>
+      <pin instance="R2" pin="P"/>
+    </net>
+
+    <!-- R2 to C2 and output -->
+    <net name="output">
+      <pin instance="R2" pin="N"/>
+      <pin instance="C2" pin="P"/>
+    </net>
+
+    <!-- All negative terminals to GND -->
+    <net name="0">
+      <pin instance="V1" pin="N"/>
+      <pin instance="GND1" pin="G"/>
+      <pin instance="V2" pin="N"/>
+      <pin instance="GND2" pin="G"/>
+      <pin instance="V3" pin="N"/>
+      <pin instance="GND3" pin="G"/>
+      <pin instance="V4" pin="N"/>
+      <pin instance="GND4" pin="G"/>
+      <pin instance="V5" pin="N"/>
+      <pin instance="GND5" pin="G"/>
+      <pin instance="C1" pin="N"/>
+      <pin instance="GND6" pin="G"/>
+      <pin instance="C2" pin="N"/>
+      <pin instance="GND7" pin="G"/>
+    </net>
+  </nets>
+
+  <simulationcommands>
+    <tran stop="5m" step="1u"/>
+  </simulationcommands>
+
+</schematic>
