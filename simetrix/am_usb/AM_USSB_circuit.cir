@@ -1,0 +1,43 @@
+* AM-USSB Modulator and Demodulator Circuit
+* fm = 1kHz, fc = 10kHz (scaled down from 700kHz for breadboard)
+
+* ── SIGNAL SOURCES ──────────────────────────────
+* Message signal: m(t) = cos(2*pi*1000*t)
+Vmsg    in_msg      0   SIN(0 1 1000)
+
+* Hilbert transform: sin(2*pi*1000*t) = 90 deg shifted
+Vhil    in_hilbert  0   SIN(0 1 1000 0 0 -90)
+
+* Carrier in-phase: cos(2*pi*10000*t)
+Vcar_i  in_car_cos  0   SIN(0 1 10000)
+
+* Carrier quadrature: sin(2*pi*10000*t)
+Vcar_q  in_car_sin  0   SIN(0 1 10000 0 0 -90)
+
+* Demodulator carrier (phi=0 for perfect recovery)
+Vdemod  in_demod    0   SIN(0 1 10000)
+
+* ── MODULATOR ───────────────────────────────────
+* In-phase path: m(t) x cos(wc*t)
+Bmult_i     out_mult_i  0   V = V(in_msg) * V(in_car_cos)
+
+* Quadrature path: m_hat(t) x sin(wc*t)
+Bmult_q     out_mult_q  0   V = V(in_hilbert) * V(in_car_sin)
+
+* Subtraction: SSB = in-phase - quadrature
+Bssb        out_ssb     0   V = V(out_mult_i) - V(out_mult_q)
+
+* ── DEMODULATOR ─────────────────────────────────
+* Multiply SSB by local carrier
+Bdemod      out_demod_raw   0   V = V(out_ssb) * V(in_demod)
+
+* Low Pass Filter: RC filter cutoff ~2kHz
+* Passes 1kHz message, blocks 20kHz double frequency term
+Rlpf1   out_demod_raw   mid_lpf     1k
+Clpf1   mid_lpf         0           80n
+Rlpf2   mid_lpf         out_lpf     1k
+Clpf2   out_lpf         0           80n
+* ── SIMULATION SETTINGS ─────────────────────────
+.tran 1u 5m
+.probe V(in_msg) V(in_hilbert) V(out_ssb) V(out_lpf)
+.end

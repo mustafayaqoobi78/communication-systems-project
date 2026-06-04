@@ -54,9 +54,12 @@ communication-systems-project/
 ├── docs/
 │   ├── AM_USB.md          # Section 1.1 to 1.6.3
 │   └── BPSK_TDM.md        # Section 2.1 to 2.8
-└── images/
-    ├── am_usb/            # 32 figures: spectra, schematics, waveforms, FFTs
-    └── bpsk/              # 29 figures: SIMetrix waveforms + breadboard photos and scope captures
+├── images/
+│   ├── am_usb/            # 32 figures: spectra, schematics, waveforms, FFTs
+│   └── bpsk/              # 29 figures: SIMetrix waveforms + breadboard photos and scope captures
+└── simetrix/
+    ├── am_usb/            # AM-USSB SIMetrix schematic (.sxsch) and SPICE netlist (.cir)
+    └── bpsk/              # BPSK behavioural SPICE netlist (.cir)
 ```
 
 ## License
