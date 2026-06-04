@@ -53,7 +53,7 @@ communication-systems-project/
 ├── README.md
 ├── docs/
 │   ├── AM_USB.md          # Section 1.1 to 1.6.3
-│   └── BPSK_TDM.md        # Section 2.1 to 2.8
+│   └── BPSK_TDM.md        # Section 2.1 to 2.9
 └── images/
     ├── am_usb/            # 32 figures: spectra, schematics, waveforms, FFTs
     └── bpsk/              # 29 figures: SIMetrix waveforms + breadboard photos and scope captures

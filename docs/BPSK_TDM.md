@@ -75,13 +75,57 @@ The double-frequency term $\cos(4\pi f_c t)$ is at 1.4 MHz, far above the signal
 
 A comparator (hard-decision stage) then thresholds the filtered signal against 0 V: outputs above 0 V are decoded as a binary 1, outputs below 0 V as a binary 0. The recovered TDM bit stream is then demultiplexed by routing odd-indexed bits to Signal 1 and even-indexed bits to Signal 2, reconstructing both original signals.
 
-## 2.3 SIMetrix Simulation
+## 2.3 DSP Model Verification (MATLAB)
+
+Before implementing the BPSK + TDM system in SIMetrix and on the breadboard, the design was verified numerically in MATLAB. This establishes an ideal baseline — the performance achievable with perfect components — against which the circuit and breadboard results are later compared. The model implements the full chain: TDM multiplexing of two bit streams, BPSK modulation onto a 700 kHz carrier, coherent demodulation, RC low-pass filtering, comparator detection, and demultiplexing back into the two original streams.
+
+### 2.3.1 TDM multiplexing
+
+![tdm construction](../images/bpsk/bpsk_tdm_construction.png)
+
+*Figure: Two 1 kbps source streams (S1 in odd slots, S2 in even slots) interleaved into a single 2 kbps TDM stream.*
+
+Two 10-bit streams are interleaved bit-by-bit into one 20-bit stream at twice the rate. Both 1 kbps streams occupy the same 10 ms window as the combined 2 kbps stream, confirming the multiplexing doubles throughput while preserving both payloads.
+
+### 2.3.2 BPSK modulation
+
+![bpsk modulated signal](../images/bpsk/bpsk_modulated.png)
+
+*Figure: BPSK signal on the 700 kHz carrier, with a zoom showing the 180° phase reversal at a bit boundary.*
+
+Each bit maps to a carrier phase: a binary 1 transmits the carrier, a binary 0 transmits its 180° inversion. The zoom confirms the clean phase reversal at the bit transition that defines BPSK.
+
+### 2.3.3 Transmit spectrum
+
+![bpsk spectrum](../images/bpsk/bpsk_spectrum.png)
+
+*Figure: BPSK transmit spectrum, main lobe at 700 kHz with first nulls at ±2 kHz.*
+
+The spectrum shows the expected sinc shape, with the first nulls falling exactly at $f_c \pm R_b$ (698 kHz and 702 kHz). This confirms the relationship between bit rate and occupied bandwidth.
+
+### 2.3.4 Coherent recovery and demultiplexing
+
+![input vs recovered](../images/bpsk/bpsk_recovery.png)
+
+*Figure: Original TDM stream, post-LPF baseband, and recovered bits at φ = 0°.*
+
+Coherent demodulation followed by low-pass filtering and a zero-threshold comparator recovers the bit stream with **BER = 0/20** — a perfect match. Demultiplexing then splits the recovered stream back into the two original 1 kbps signals, both reconstructed exactly. This validates the full modulation–demodulation–demux chain.
+
+### 2.3.5 Phase-angle experiment
+
+![phase experiment](../images/bpsk/bpsk_phase.png)
+
+*Figure: Recovered baseband at LO phases of 0°, 90°, and 180°.*
+
+Coherent BPSK recovery scales with the LO phase as $\cos(\varphi)$: the baseband is at full amplitude at 0°, collapses to near-zero at 90°, and returns at full amplitude but inverted at 180°. The model confirms this, recovering 0.502 V at 0° and 180° and ~0 V at 90°. This phase sensitivity is the key behaviour examined on the circuit in §2.7 and discussed in §2.9.
+
+## 2.4 SIMetrix Simulation
 
 The BPSK with TDM circuit was implemented in SIMetrix to confirm that the modulation and demodulation behaviour could be reproduced using an analogue circuit. This ensured that the 180° phase reversals, TDM bit timing, and coherent detection would all operate correctly when driven by a practical ±1 V bipolar NRZ signal rather than an ideal mathematical input.
 
 The TDM bitstream was generated using a piecewise linear (PWL) voltage source with 0.5 ms bit slots, driving the SIMetrix circuit to produce carrier inversions at each bit transition.
 
-### 2.3.1 PWL TDM bit parameters
+### 2.4.1 PWL TDM bit parameters
 
 ![PWL source settings](../images/bpsk/fig04_pwl_source_settings.png)
 
@@ -96,7 +140,7 @@ The interleaved 20-bit sequence `[0 0 1 0 0 0 0 0 0 1 1 0 0 1 0 1 0 1 1 0]` enco
 - **Signal 1 (odd slots):** `[0 1 0 0 0 1 0 0 0 1]`
 - **Signal 2 (even slots):** `[0 0 0 0 1 0 1 1 1 0]`
 
-### 2.3.2 Modulation stage
+### 2.4.2 Modulation stage
 
 ![Practical circuit — Modulation Stage](../images/bpsk/fig06_modulation_stage_circuit.png)
 
@@ -104,7 +148,7 @@ The interleaved 20-bit sequence `[0 0 1 0 0 0 0 0 0 1 1 0 0 1 0 1 0 1 1 0]` enco
 
 The modulation stage spans the PWL message source through to the output of the first op-amp. The PWL bitstream drives a diode-ring modulator built from four 1N4148 diodes, which hard-switches the 700 kHz carrier (5 V peak) based on the bipolar message polarity to produce the BPSK-modulated signal. A TL072 op-amp at the output buffers and amplifies the modulator output.
 
-### 2.3.3 Demodulation stage and Low-Pass Filter
+### 2.4.3 Demodulation stage and Low-Pass Filter
 
 ![Practical circuit — Demodulation Stage](../images/bpsk/fig07_demodulation_stage_circuit.png)
 
@@ -116,7 +160,7 @@ $$f_c = \frac{1}{2\pi \times 10000 \times 3.3 \times 10^{-9}} = 4.82\ \text{kHz}
 
 This rejects the 1.4 MHz double-frequency mixing product (700 kHz + 700 kHz) while passing the 2 kbps NRZ baseband content well within its passband.
 
-### 2.3.4 Amplification and comparator stage
+### 2.4.4 Amplification and comparator stage
 
 ![Practical circuit — Amplifier/Comparator Stage](../images/bpsk/fig08_amplifier_comparator_circuit.png)
 
@@ -126,7 +170,7 @@ This stage begins at the output of the low-pass filter through to the final outp
 
 The amplified signal then drives a TL072 (X3) configured as an open-loop comparator. With no feedback resistor, the op-amp swings to its supply rails (~±13 V) at every zero-crossing of the input, producing a clean digital output. The R3–R4 voltage divider (11.5 kΩ / 1 kΩ) scales this rail-to-rail swing back to approximately ±1 V, matching the amplitude of the original PWL bitstream and enabling direct overlay comparison.
 
-## 2.4 Waveform Results
+## 2.5 Waveform Results
 
 ![BPSK SIMetrix — PWL Input Bitstream](../images/bpsk/fig09_pwl_input_bitstream_simetrix.png)
 
@@ -200,7 +244,7 @@ The FFT of the recovered baseband signal shows energy concentrated below 2 kHz, 
 
 The overlay confirms bit-by-bit agreement between the original PWL input and the final recovered output across all 20 TDM slots. The only visible difference is a minor edge offset on the recovered signal due to combined LPF group delay and comparator response time, a normal artifact of any analogue signal chain that does not affect BER. The frequency, amplitude, and polarity of every bit are preserved through the complete modulation–transmission–demodulation chain, proving zero-bit errors across all 20 slots.
 
-## 2.5 SIMetrix Simulation Analysis
+## 2.6 SIMetrix Simulation Analysis
 
 The SIMetrix waveforms verify the BPSK with TDM design end-to-end. The full chain — modulator (X1 saturated hard limiter), product detector, LPF, X2 amplifier, X3 comparator, and R3/R4 divider — recovers the original PWL bitstream with a Bit Error Rate of 0/20. The BPSK modulation index of π radians (180°) provides maximum constellation separation between the two symbol points, giving optimal detection margin against the non-ideal effects introduced by the practical circuit (diode switching distortion, op-amp saturation, and RC filter phase lag). Because BPSK encodes information in carrier phase rather than amplitude, hard-limiting through the saturated X1 stage does not degrade the result — the only visible artifact is a small edge offset between the original and recovered signals, attributable to LPF group delay and comparator response time, which has no effect on bit-by-bit decoding.
 
@@ -233,11 +277,11 @@ Unlike SSB-AM (Section 1.6), BPSK coherent demodulation is highly sensitive to l
 
 The table was generated by reading the polarity of each 0.5 ms TDM slot from the overlay. All 20 slots match in polarity, yielding **BER = 0/20 = 0.0000**.
 
-## 2.6 Breadboard implementation
+## 2.7 Breadboard implementation
 
 Having verified the BPSK/TDM system in SIMetrix, the circuit was built on a breadboard to confirm that the same modulation and demodulation behavior could be achieved using physical components. This hardware implementation follows the SIMetrix topology which uses a diode-ring modulator, TL072 gain stage, diode-ring demodulator, RC low-pass filter, and TL072 comparator, with two minor adaptations. The gain stage was configured as a Schmitt trigger for robust bit detection, and the output voltage divider was omitted as amplitude scaling was unnecessary for polarity comparison. These changes are deliberate engineering choices to optimize the physical circuit for bit-level accuracy across all 20 slots.
 
-### 2.6.1 Test Setup
+### 2.7.1 Test Setup
 
 The TDM bitstream was programmed manually into the AFG1022 using the arbitrary waveform editor. The 20-bit sequence `[0 0 1 0 0 0 0 0 0 1 1 0 0 1 0 1 0 1 1 0]` was entered as a custom waveform with each bit held for 0.5 ms, giving a total period of 10 ms and a bit rate of 2 kbps. The waveform swings between −1 V and +1 V with no DC offset, matching the SIMetrix PWL source exactly.
 
@@ -253,7 +297,7 @@ The carrier signal was generated on the second channel of the same AFG1022, set 
 
 The AFG1022 second channel was configured to output a 700 kHz, 10 Vpp sine wave with 0° start phase and no DC offset, matching the SIMetrix carrier source. The same signal feeds both the modulator and demodulator diode rings via a BNC T-splitter, ensuring identical frequency and phase between the transmitter carrier and the receiver's local oscillator.
 
-### 2.6.2 Circuit Description
+### 2.7.2 Circuit Description
 
 The breadboard circuit was built on a single full-size 830-point breadboard. The signal flows left to right across the board, following the same stage order as the SIMetrix schematic:
 
@@ -271,7 +315,7 @@ The breadboard circuit was built on a single full-size 830-point breadboard. The
 
 *Figure: Completed BPSK breadboard circuit.*
 
-### 2.6.3 Breadboard Components
+### 2.7.3 Breadboard Components
 
 **Table: BPSK breadboard component list.**
 
@@ -293,9 +337,9 @@ The breadboard circuit was built on a single full-size 830-point breadboard. The
 
 > **Note:** The SIMetrix R3/R4 output divider was not implemented on the breadboard, as bit-level polarity comparison can be made directly from the ±13.4 V comparator output without amplitude scaling.
 
-## 2.7 Breadboard Waveform Results
+## 2.8 Breadboard Waveform Results
 
-### 2.7.1 Input Signal (TDM Bitstream)
+### 2.8.1 Input Signal (TDM Bitstream)
 
 The oscilloscope was connected to the first diode-ring message input node to verify that the AFG output was reaching the circuit correctly. The measured waveform shows the ±1 V bipolar NRZ signal with 0.5 ms bit slots, matching the programmed TDM sequence. The on-screen frequency reading of approximately 507 Hz reflects the scope's auto-counter measuring the dominant symbol-transition cadence in this specific 20-bit pattern, not the underlying 2 kbps bit rate.
 
@@ -305,7 +349,7 @@ The pulse pattern — a single pulse near the start, a long gap, then a cluster 
 
 *Figure: Input TDM bitstream probed at first diode ring message node (±1 V, 0.5 ms/bit).*
 
-### 2.7.2 BPSK Modulated Signal
+### 2.8.2 BPSK Modulated Signal
 
 The BPSK modulated signal was probed at the output of the first diode ring. At the wide timescale, the 700 kHz carrier appears as a solid band that switches polarity at each bit boundary. The gaps between the square waveforms are the 180° phase reversals where the carrier passes through zero as it flips. The carrier amplitude is approximately ±4 V, consistent with the 5 V peak drive minus the ~1 V total forward voltage drop across the two conducting diodes in the ring.
 
@@ -319,7 +363,7 @@ Zooming in to 2.5 µs/div resolves the individual 700 kHz carrier cycles. The wa
 
 *Figure: BPSK modulated signal zoomed to 2.5 µs/div, showing individual 700 kHz carrier cycles with diode switching distortion.*
 
-### 2.7.3 Comparator Output
+### 2.8.3 Comparator Output
 
 The final comparator output (second TL072, pin 1) produces a clean digital waveform switching between positive and negative saturation. The oscilloscope measurements read Pk-Pk = 27.0 V and Max = 13.4 V, which represents the TL072 saturating at approximately ±(15−1.6) V, consistent with the datasheet output voltage swing specification. The on-screen 285.7 Hz Freq measurement and 500 Hz corner reading reflect the scope counting bit-transitions at different averaging windows; neither corresponds directly to the underlying 2 kbps bit rate, which is masked by the long zero-runs in this specific 20-bit pattern. The edges are sharp with no visible ringing, indicating that the bypass capacitors are effectively suppressing high-frequency oscillation, and the recovered bit pattern matches the input TDM sequence perfectly.
 
@@ -327,7 +371,7 @@ The final comparator output (second TL072, pin 1) produces a clean digital wavef
 
 *Figure: Comparator output with oscilloscope measurements: Pk-Pk = 27.0 V, Max = 13.4 V, Freq = 500 Hz.*
 
-### 2.7.4 Baseband signal vs LPF output overlay
+### 2.8.4 Baseband signal vs LPF output overlay
 
 A two-channel capture taken between the LPF and comparator stages shows CH1 with a clean digital signal at the bit-rate cadence and CH2 with an intermediate baseband waveform exhibiting distinct voltage levels. The stepped shape on CH2 corresponds to the post-LPF baseband signal before final comparator slicing, similar to the SIMetrix LPF/X2 amplifier output. The CH1 transitions align with the level changes on CH2, indicating that the comparator stage is correctly thresholding the recovered baseband into a clean digital bitstream.
 
@@ -335,7 +379,7 @@ A two-channel capture taken between the LPF and comparator stages shows CH1 with
 
 *Figure: Two-channel capture (500 µs/div) — CH1 (yellow) shows the final comparator output; CH2 (cyan) shows the intermediate baseband signal.*
 
-### 2.7.5 Input vs Output Overlay
+### 2.8.5 Input vs Output Overlay
 
 The two-channel capture shows the comparator output on CH1 alongside the original TDM input on CH2, recorded across the full 10 ms TDM frame. The transitions on the comparator output align with the transitions on the input across the visible bits, indicating that the BPSK chain is recovering the bit pattern correctly through modulation, coherent demodulation, low-pass filtering, and final comparator slicing. The amplitude difference between channels (±1 V input vs the ±13 V comparator swing) reflects the comparator's saturated rail-to-rail output, which was not amplitude-scaled on the breadboard since polarity comparison alone is sufficient to verify correct bit recovery. This confirms end-to-end functional operation of the breadboard implementation, matching the BER = 0/20 result observed in the SIMetrix simulation.
 
@@ -343,7 +387,7 @@ The two-channel capture shows the comparator output on CH1 alongside the origina
 
 *Figure: BPSK breadboard — comparator output (CH1, yellow, 5 V/div) and original TDM input (CH2, cyan, 2 V/div) captured simultaneously at 2.5 ms/div.*
 
-## 2.8 Breadboard Analysis
+## 2.9 Breadboard Analysis
 
 The breadboard results confirm that the practical BPSK circuit successfully modulates, transmits, and recovers the 20-bit TDM bitstream using analogue diode-ring modulators and coherent detection. Comparing the input and output overlays, the bit transitions align consistently across all visible TDM slots, confirming end-to-end functional bit recovery. This matches the BER = 0/20 result observed in the SIMetrix simulation, where bit-by-bit comparison was performed against the deterministic PWL input.
 
