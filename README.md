@@ -52,10 +52,13 @@ The breadboard reproduces the SIMetrix result exactly despite real-world impairm
 communication-systems-project/
 ├── README.md
 ├── docs/
-│   ├── AM_USB.md          # Section 1.1 to 1.6.3
+│   ├── AM_USB.md          # Section 1.1 to 1.7.3
 │   └── BPSK_TDM.md        # Section 2.1 to 2.9
+├── matlab/
+│   ├── am_ssb_phase_shift.m   # DSP model: SSB phase-shift modulation, demod, phase experiment
+│   └── bpsk_tdm.m             # DSP model: BPSK + TDM modulation, demod, demux, phase experiment
 └── images/
-    ├── am_usb/            # 32 figures: spectra, schematics, waveforms, FFTs
+    ├── am_usb/            # spectra, schematics, waveforms, FFTs (DSP + SIMetrix)
     └── bpsk/              # 29 figures: SIMetrix waveforms + breadboard photos and scope captures
 ```
 
